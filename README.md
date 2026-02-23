@@ -38,7 +38,7 @@ Applies 91 filters (24 Gabor + 6 second-order + 48 Leung-Malik [2] + 13 Schmid [
 Hooks into early layers of a pretrained ResNet18 [4] to grab 256 feature channels, upsamples them, pools to 768 maps, then runs the same FFT autocorrelation pipeline. This approach is inspired by Lettry et al. [5] who showed that CNN activations encode spatial repetitions, and by Qu et al. [6] who combined CNN features with autocorrelation for repeated pattern detection.
 ### Ensemble (ensemble.py)
 
-Each method votes (h, v) weighted by base_weight * confidence. Highest score per axis wins. Default weights: ORB 0.25, FilterBank 0.40, ResNet 0.35.
+Each method votes (h, v) weighted by base_weight * confidence. Default weights: ORB 0.25, FilterBank 0.40, ResNet 0.35.
 
 ### Utilities (utils.py)
 
