@@ -8,8 +8,6 @@ import sys, os
 import numpy as np
 import cv2
 from scipy.ndimage import uniform_filter
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import (high_pass_filter, fft_autocorrelation,
                    find_period_from_profile, multiscale_pool)
 
