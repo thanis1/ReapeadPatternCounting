@@ -8,8 +8,6 @@ import numpy as np
 import cv2
 import torch
 import torchvision.models as models
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import fft_autocorrelation, find_period_from_profile, multiscale_pool
 
 
