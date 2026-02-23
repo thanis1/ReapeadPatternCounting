@@ -166,10 +166,16 @@ def _extract_features(img, cfg, gabor_filters, lm_bank, schmid_bank):
     """
     maps = []
 
-    # Step 1: Gabor responses with ReLU (24 maps)
+    # Step 1: Gabor responses with configurable activation (24 maps)
+    activation = cfg.get("gabor_activation", "relu")
     for k in gabor_filters:
         resp = cv2.filter2D(img, cv2.CV_64F, k)
-        maps.append(np.maximum(resp, 0))
+        if activation == "abs":
+            maps.append(np.abs(resp))
+        elif activation == "square":
+            maps.append(resp ** 2)
+        else:  # default: relu
+            maps.append(np.maximum(resp, 0))
 
     # Step 2: LoG at multiple scales (3 maps)
     for sigma in cfg.get("log_sigmas", [2, 5, 10]):
