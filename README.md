@@ -13,19 +13,17 @@ Three methods working in different domains, combined via ensemble voting.
 
 ### Method 1: ORB Displacement Voting (orb.py)
 
-Finds ORB [1] keypoints and self-matches them. Since the pattern repeats, the same keypoint shows up at regular intervals, so displacements between matches cluster at multiples of the tile size. Histogram voting + GCD extracts the period. Very fast (~15 ms), struggles with blur.
-
+Finds ORB [1] keypoints and self-matches them. Since the pattern repeats, the same keypoint shows up at regular intervals, so displacements between matches cluster at multiples of the tile size. Histogram voting + Greatest Common Divisor (GCD) extracts the period. 
 ### Method 2: Combined Filter Bank (filterbank.py)
 
-Applies 91 filters (24 Gabor + 6 second-order + 48 Leung-Malik [2] + 13 Schmid [3]), pools each at 3 scales to get 273 feature maps, then runs FFT autocorrelation on all of them. Averaging that many autocorrelations kills the noise and the periodic peaks stand out clearly. Most reliable method, no PyTorch needed.
+Applies 91 filters (24 Gabor + 6 second-order + 48 Leung-Malik [2] + 13 Schmid [3]), pools each at 3 scales to get 273 feature maps, then runs FFT autocorrelation on all of them. Averaging that many autocorrelations kills the noise and the periodic peaks stand out clearly. 
 
 ### Method 3: ResNet Feature Autocorrelation (resnet.py)
 
-Hooks into early layers of a pretrained ResNet18 [4] to grab 256 feature channels, upsamples them, pools to 768 maps, then runs the same FFT autocorrelation pipeline. This approach is inspired by Lettry et al. [5] who showed that CNN activations encode spatial repetitions, and by Qu et al. [6] who combined CNN features with autocorrelation for repeated pattern detection. Needs PyTorch and may struggle on images far from ImageNet.
-
+Hooks into early layers of a pretrained ResNet18 [4] to grab 256 feature channels, upsamples them, pools to 768 maps, then runs the same FFT autocorrelation pipeline. This approach is inspired by Lettry et al. [5] who showed that CNN activations encode spatial repetitions, and by Qu et al. [6] who combined CNN features with autocorrelation for repeated pattern detection.
 ### Ensemble (ensemble.py)
 
-Each method votes (h, v) weighted by base_weight * confidence. Highest score per axis wins. Default weights: ORB 0.15, FilterBank 0.50, ResNet 0.35.
+Each method votes (h, v) weighted by base_weight * confidence. Highest score per axis wins. Default weights: ORB 0.25, FilterBank 0.40, ResNet 0.35.
 
 ### Utilities (utils.py)
 
