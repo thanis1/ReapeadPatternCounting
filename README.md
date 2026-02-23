@@ -1,22 +1,15 @@
 # Repeated Pattern Detector
 
 Detects how many times a 2D pattern repeats horizontally and vertically in an image.
-
 ```
 python detect.py testimage.png
 4 3
 ```
-
 ## Methods
-
 Three methods, each working in a different domain, combined through weighted ensemble voting.
-
 ### Method 1: ORB Displacement Voting (orb.py)
-
 Spatial domain approach. Detects ORB keypoints (FAST corners + BRIEF descriptors) and self-matches them using brute-force Hamming distance. In a tiled image the same feature appears at regular intervals, so displacement vectors between matched pairs cluster at multiples of the tile size. Histogram voting followed by GCD refinement extracts the fundamental period.
-
 Fast (~15 ms) but sensitive to noise and blur.
-
 Reference: Rublee, E., Rabaud, V., Konolige, K. & Bradski, G. "ORB: An efficient alternative to SIFT or SURF." ICCV, 2011, pp. 2564-2571.
 
 ### Method 2: Combined Filter Bank (filterbank.py)
