@@ -13,7 +13,7 @@ import cv2
 import yaml
 
 from methods import orb, filterbank, ensemble
-
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 # Check Resent availability 
 try:
     from methods import resnet
