@@ -3,8 +3,8 @@ Combined filter bank method: applies 91 handcrafted filters, pools them
 to 273 maps, then runs FFT autocorrelation to find the tile period.
 """
 
+import json
 import math
-import sys, os
 import numpy as np
 import cv2
 from scipy.ndimage import uniform_filter
@@ -12,10 +12,16 @@ from utils import (high_pass_filter, fft_autocorrelation,
                    find_period_from_profile, multiscale_pool)
 
 
-# built once on first call, reused after that
+# Built once per config, rebuilt if config changes
+_cache_key = None
 _gabor_cache = None
 _lm_cache = None
 _schmid_cache = None
+
+
+def _cfg_signature(cfg):
+    """Hash the config dict so we can detect changes between calls."""
+    return json.dumps(cfg, sort_keys=True)
 
 
 def _build_gabor_filters(cfg):
@@ -60,7 +66,7 @@ def _build_lm_bank(cfg):
     nf = n_bar + n_edge + 12
 
     F = np.zeros((sup, sup, nf))
-    hsup = (sup - 1) / 2
+    hsup = (sup - 1) // 2  # integer division for consistent grid indexing
     x, y = np.meshgrid(np.arange(-hsup, hsup + 1),
                         np.arange(-hsup, hsup + 1))
     orgpts = np.array([x.flatten(), y.flatten()])
@@ -219,13 +225,15 @@ def detect(gray, cfg):
             v_tiles:    int, number of vertical repetitions
             confidence: float, fixed at 0.90
     """
-    global _gabor_cache, _lm_cache, _schmid_cache
+    global _cache_key, _gabor_cache, _lm_cache, _schmid_cache
 
-    # Step 1: build filter banks on first call (cached after that)
-    if _gabor_cache is None:
+    # Step 1: build filter banks (rebuild if cfg changed since last call)
+    sig = _cfg_signature(cfg)
+    if _cache_key != sig:
         _gabor_cache = _build_gabor_filters(cfg)
         _lm_cache = _build_lm_bank(cfg)
         _schmid_cache = _build_schmid_bank(cfg)
+        _cache_key = sig
 
     # Step 2: high-pass filter to remove illumination gradients
     hp = high_pass_filter(gray).astype(np.float64)
@@ -250,7 +258,13 @@ def detect(gray, cfg):
     v_period = find_period_from_profile(ac[:, 0], H, height_ratio=hr,
                                          prominence_ratio=pr)
 
+    # Check zero or invalid period
+    if not np.isfinite(h_period) or h_period < 1:
+        h_period = float(W)
+    if not np.isfinite(v_period) or v_period < 1:
+        v_period = float(H)
+
     h_tiles = max(1, round(W / h_period))
     v_tiles = max(1, round(H / v_period))
-    ## I have added default confidence 0.9, this should be selected automatically  for better performance
+    #Confidence is fixed; should be selected based on validation set performance in future work
     return h_tiles, v_tiles, 0.90
