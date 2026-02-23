@@ -74,7 +74,7 @@ Output: two integers to stdout, `horizontal vertical`.
 ## Project Structure
 
 ```
-pattern_detector/
+ReapeadPatternCounting/
     detect.py              entry point
     config.yaml            parameters
     utils.py               shared utilities
