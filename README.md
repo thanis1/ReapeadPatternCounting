@@ -1,68 +1,64 @@
 # Repeated Pattern Detector
 
-## Problem
+Detects how many times a 2D pattern repeats horizontally and vertically in an image.
 
-Given an image containing a single repeated 2D pattern arranged in a regular grid,
-determine how many times the pattern repeats horizontally and vertically.
+```
+python detect.py testimage.png
+4 3
+```
 
-## Approach
+## Methods
 
-The solution combines three complementary detection methods into an ensemble,
-each operating in a different signal domain to capture what the others might miss.
+Three methods, each working in a different domain, combined through weighted ensemble voting.
 
-### Method 1: ORB Displacement Voting (Time/Spatial Domain)
+### Method 1: ORB Displacement Voting (orb.py)
 
-ORB works directly on pixel coordinates. It detects keypoints (corners, blobs)
-and computes a compact binary descriptor for each one. Because the pattern repeats,
-the same keypoint appears at regular spatial intervals. By self-matching all
-descriptors and collecting the displacement vectors between matched pairs, we get
-a histogram that clusters at multiples of the tile size. A GCD refinement step
-extracts the fundamental period from these clusters.
+Spatial domain approach. Detects ORB keypoints (FAST corners + BRIEF descriptors) and self-matches them using brute-force Hamming distance. In a tiled image the same feature appears at regular intervals, so displacement vectors between matched pairs cluster at multiples of the tile size. Histogram voting followed by GCD refinement extracts the fundamental period.
 
-This method is very fast (~15 ms) but sensitive to noise and blur since it relies
-on sharp local features that degrade under distortion.
+Fast (~15 ms) but sensitive to noise and blur.
 
-### Method 2: Combined Filter Bank (Frequency Domain)
+Reference: Rublee, E., Rabaud, V., Konolige, K. & Bradski, G. "ORB: An efficient alternative to SIFT or SURF." ICCV, 2011, pp. 2564-2571.
 
-This method operates in the frequency domain. It applies 91 handcrafted filters
-to the image:
+### Method 2: Combined Filter Bank (filterbank.py)
 
-- 24 Gabor filters (oriented edge/texture detectors at multiple scales)
-- 6 second-order features (Laplacian-of-Gaussian blobs, gradient magnitude, local variance)
-- 48 Leung-Malik filters (bars, edges, Gaussians, LoG at multiple orientations)
-- 13 Schmid filters (rotation-invariant ring patterns)
+Frequency domain approach. Applies 91 handcrafted filters from four families:
 
-Each filter response is multi-scale pooled (x1, x2, x4), producing 273 feature maps.
-The FFT-based autocorrelation of each map reveals periodic peaks at the tile spacing.
-Averaging 273 autocorrelations suppresses noise while reinforcing the true period
-(SNR improves by a factor of sqrt(273) ~ 16.5x). Peak detection followed by GCD
-gives the fundamental horizontal and vertical periods.
+- 24 Gabor filters (3 scales x 8 orientations), oriented edge and texture detectors
+- 6 second-order features: Laplacian-of-Gaussian, gradient magnitude, local variance
+- 48 Leung-Malik filters: bars, edges, Gaussians, LoG at multiple orientations and scales
+- 13 Schmid filters: rotation-invariant cosine-Gaussian ring patterns
 
-This is the most robust handcrafted approach and does not require PyTorch.
+Each response is multi-scale pooled (x1, x2, x4), producing 273 feature maps. FFT-based autocorrelation (Wiener-Khinchin theorem) on each map reveals periodic peaks at the tile spacing. Averaging 273 autocorrelations suppresses noise while reinforcing the true period. Peak detection followed by GCD gives the fundamental period.
 
-### Method 3: ResNet Feature Autocorrelation (Learned CNN Features)
+Most robust handcrafted approach. Does not require PyTorch.
 
-Instead of handcrafted filters, this method uses the early layers of a pretrained
-ResNet18 (trained on ImageNet) as a feature extractor. Hooks on three layers
-(conv1, layer1, layer2) capture 256 feature channels that encode edges, textures,
-and shapes the network has learned. These are upsampled to full resolution and
-multi-scale pooled to 768 maps, then fed through the same FFT autocorrelation
-pipeline as Method 2.
+References:
+- Leung, T. & Malik, J. "Representing and recognizing the visual appearance of materials using three-dimensional textons." International Journal of Computer Vision, 43(1):29-44, 2001.
+- Schmid, C. "Constructing models for content-based image retrieval." CVPR, vol. 2, pp. 39-45, 2001.
+- Varma, M. & Zisserman, A. "A statistical approach to texture classification from single images." International Journal of Computer Vision, 62(1-2):61-81, 2005.
 
-The learned features are richer and more diverse than any handcrafted bank, but
-there may be a domain gap if the input image looks nothing like ImageNet data.
+### Method 3: ResNet Feature Autocorrelation (resnet.py)
 
-### Why an Ensemble?
+Learned CNN features approach. Uses early layers of a pretrained ResNet18 (ImageNet weights) as a feature extractor. Forward hooks on relu, layer1, and layer2 capture 256 feature channels encoding edges, textures, and shapes. These are upsampled to full resolution and multi-scale pooled to 768 maps, then fed through the same FFT autocorrelation pipeline as Method 2.
 
-Each method sees the image differently:
+Richer features than any handcrafted bank, but possible domain gap on images far from ImageNet.
 
-- ORB finds repeated spatial landmarks but fails on smooth or noisy patterns
-- The filter bank detects periodic frequency signatures but uses fixed filter shapes
-- ResNet captures learned visual concepts but depends on pretrained weights
+Reference: He, K., Zhang, X., Ren, S. & Sun, J. "Deep Residual Learning for Image Recognition." CVPR, 2016, pp. 770-778.
 
-By having all three vote on the grid dimensions (weighted by their confidence),
-the ensemble is more robust than any single method. When they agree, confidence
-is high. When one fails (e.g. ORB on a blurred image), the other two outvote it.
+### Ensemble Voting (ensemble.py)
+
+Each method outputs (h, v, confidence). The ensemble multiplies each method's base weight by its confidence and votes per axis. Highest total weight wins.
+
+Default weights: ORB = 0.15, FilterBank = 0.50, ResNet = 0.35.
+
+### Shared Utilities (utils.py)
+
+Common functions used by the filter bank and ResNet methods:
+- high_pass_filter: removes illumination gradients via Gaussian subtraction
+- fft_autocorrelation: Wiener-Khinchin 2D autocorrelation with Tukey windowing
+- find_period_from_profile: peak detection + GCD on 1D autocorrelation slices
+- histogram_vote: histogram-based period extraction from displacement vectors
+- multiscale_pool: downsample/upsample pooling at multiple scales
 
 ## Setup
 
@@ -73,71 +69,75 @@ conda env create -f environment.yml
 conda activate pattern-detector
 ```
 
-### Option B: pip (no Conda)
+### Option B: pip
 
 ```bash
 python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# Linux / Mac
-source .venv/bin/activate
-
+source .venv/bin/activate        # Linux / Mac
+# .venv\Scripts\activate         # Windows
 pip install -r requirements.txt
 ```
 
-**Note:** PyTorch is only required for the ResNet method. If you skip it,
-the ensemble will still run using ORB + FilterBank:
-
-```bash
-pip install numpy opencv-python-headless scipy pyyaml
-```
+PyTorch is only needed for Method 3. Without it you can still run ORB and FilterBank individually.
 
 ## Usage
 
-```bash
-python detect.py <image_path> [options]
+```
+python detect.py <image> [-m METHOD] [-c CONFIG] [-o OUTPUT]
 ```
 
-### Input
+| Argument       | Description                                             |
+|----------------|---------------------------------------------------------|
+| `image`        | Path to input image (PNG, JPG, BMP, grayscale or RGB)   |
+| `-m, --method` | `ensemble` (default), `orb`, `filterbank`, or `resnet`  |
+| `-c, --config` | YAML config file (default: `config.yaml`)               |
+| `-o, --output` | Save results to a JSON file                             |
 
-A single image file (PNG, JPG, BMP) containing a repeated 2D pattern.
-The image can be grayscale or RGB.
+### Examples
+
+```bash
+# ensemble (all three methods)
+python detect.py testimage.png
+
+# single method
+python detect.py testimage.png -m orb
+python detect.py testimage.png -m filterbank
+python detect.py testimage.png -m resnet
+
+# save detailed results to json
+python detect.py testimage.png -o result.json
+```
 
 ### Output
 
-Two integers printed to stdout, separated by a space:
+Two integers printed to stdout:
 
 ```
 horizontal_repetitions vertical_repetitions
 ```
 
-### Examples
+## Project Structure
 
-```bash
-# Default: run all three methods + ensemble
-python detect.py testimage.png
-# Output: 4 3
-
-# With logging to see what is happening
-python detect.py testimage.png -v
-
-# Run a single method
-python detect.py testimage.png --method orb
-python detect.py testimage.png --method filterbank
-python detect.py testimage.png --method resnet
-
-# Save detailed logs to file
-python detect.py testimage.png -vv --log-file run.log
+```
+pattern_detector/
+    detect.py              main entry point
+    config.yaml            tunable parameters
+    utils.py               shared utilities (FFT, peak detection, pooling)
+    requirements.txt       pip dependencies
+    environment.yml        conda environment
+    methods/
+        __init__.py
+        orb.py             Method 1: ORB displacement voting
+        filterbank.py      Method 2: combined filter bank
+        resnet.py          Method 3: ResNet feature autocorrelation
+        ensemble.py        weighted confidence voting
 ```
 
-### Options
+## Requirements
 
-| Flag              | Description                                  |
-|-------------------|----------------------------------------------|
-| `--method`, `-m`  | `ensemble` (default), `orb`, `filterbank`, `resnet` |
-| `--config`, `-c`  | Path to YAML config file (default: `config.yaml`)   |
-| `-v`              | Show INFO logs (image size, methods, timing)         |
-| `-vv`             | Show DEBUG logs (config values, pixel stats)         |
-| `--log-file`      | Also write all logs to this file                     |
+- Python >= 3.11
+- NumPy >= 1.24
+- OpenCV >= 4.8
+- SciPy >= 1.11
+- PyYAML >= 6.0
+- PyTorch >= 2.0 and TorchVision >= 0.15 (for ResNet method only)
