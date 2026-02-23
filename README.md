@@ -4,8 +4,7 @@ Detects how many times a 2D pattern repeats horizontally and vertically in an im
 
 ```
 python detect.py testimage.png
-<img width="582" height="348" alt="image" src="https://github.com/user-attachments/assets/63656cc7-237a-477e-9409-ea2716f2cb83" />
-
+Output: 
 4 3
 ```
 
