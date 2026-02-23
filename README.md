@@ -91,7 +91,7 @@ pattern_detector/
 - NumPy >= 1.24, OpenCV >= 4.8, SciPy >= 1.11, PyYAML >= 6.0
 - PyTorch >= 2.0 + TorchVision >= 0.15 (ResNet only)
 
-#Potential improvements and future directions
+## Potential improvements and future directions
 
 - Try a detection-based model, for instance YOLO-E: Real-Time Seeing Anything.
 - Automate the selection of confidences and the weighting between models through proper benchmarking and validation.
