@@ -5,6 +5,21 @@ Detects how many times a 2D pattern repeats horizontally and vertically in an im
 ```
 python detect.py testimage.png
 Output: 
+Image: testimage.png  (582x348)
+
+  running ORB ...
+  ORB result: 4 x 3  conf=0.900  (5.028s)
+
+  running FilterBank ...
+  FilterBank result: 4 x 3  conf=0.900  (23.781s)
+
+  running ResNet ...
+  ResNet result: 4 x 3  conf=0.900  (68.630s)
+
+  running Ensemble ...
+  Ensemble result: 4 x 3  (0.038s)
+
+Done in 97.557s
 4 3
 ```
 
