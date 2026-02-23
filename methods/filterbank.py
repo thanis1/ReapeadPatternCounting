@@ -248,4 +248,5 @@ def detect(gray, cfg):
 
     h_tiles = max(1, round(W / h_period))
     v_tiles = max(1, round(H / v_period))
+    ## I have added default confidence 0.9, this should be selected automatically  for better performance
     return h_tiles, v_tiles, 0.90

@@ -22,7 +22,7 @@ except Exception:
     _has_resnet = False
 
 
-DEFAULT_WEIGHTS = {"orb": 0.15, "filterbank": 0.50, "resnet": 0.35}
+DEFAULT_WEIGHTS = {"orb": 0.25, "filterbank": 0.4, "resnet": 0.35}
 
 
 def load_config(path):

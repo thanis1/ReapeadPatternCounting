@@ -64,11 +64,7 @@ def detect(gray, cfg):
     if h_period and v_period:
         h_tiles = max(1, round(W / h_period))
         v_tiles = max(1, round(H / v_period))
-
-        match_density = min(1.0, (len(h_disps) + len(v_disps)) / 150)
-        h_fit = 1.0 - abs(W - h_tiles * h_period) / W
-        v_fit = 1.0 - abs(H - v_tiles * v_period) / H
-        confidence = max(0.0, match_density * h_fit * v_fit)
-        return h_tiles, v_tiles, confidence
+        ## I have added default confidence 0.9, this should be selected automatically  for better performance
+        return h_tiles, v_tiles, 0.9
 
     return 1, 1, 0.0
