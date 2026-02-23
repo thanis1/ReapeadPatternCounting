@@ -36,7 +36,7 @@ filterbank:
   tukey_alpha: 0.1
   peak_height_ratio: 0.15
   peak_prominence_ratio: 0.05
-
+  gabor_activation: abs # "relu", "abs", "square"
 # ResNet feature extraction
 resnet:
   model: resnet18
