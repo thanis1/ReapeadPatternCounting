@@ -3,7 +3,6 @@ ResNet feature autocorrelation: hooks into early layers of a pretrained
 ResNet18, upsamples the feature maps, then runs FFT autocorrelation.
 """
 
-import sys, os
 import numpy as np
 import cv2
 import torch
@@ -61,7 +60,7 @@ def detect(gray, cfg, img_bgr=None):
         tuple (h_tiles, v_tiles, confidence)
             h_tiles:    int, number of horizontal repetitions
             v_tiles:    int, number of vertical repetitions
-            confidence: float, fixed at 0.85
+            confidence: float, fixed at 0.90
     """
     _load_model(cfg)
 
@@ -104,7 +103,13 @@ def detect(gray, cfg, img_bgr=None):
     h_period = find_period_from_profile(ac[0, :], W)
     v_period = find_period_from_profile(ac[:, 0], H)
 
+    # Guard against zero or invalid period
+    if not np.isfinite(h_period) or h_period < 1:
+        h_period = float(W)
+    if not np.isfinite(v_period) or v_period < 1:
+        v_period = float(H)
+
     h_tiles = max(1, round(W / h_period))
     v_tiles = max(1, round(H / v_period))
-     ## I have added default confidence 0.9, this should be selected automatically  for better performance
-    return h_tiles, v_tiles, 0.9
+    #Confidence is fixed; should be selected based on validation set performance in future work
+    return h_tiles, v_tiles, 0.90
