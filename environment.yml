@@ -1,0 +1,16 @@
+# conda env create -f environment.yml
+# conda activate pattern-detector
+name: pattern-detector
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.11
+  - numpy>=1.24
+  - scipy>=1.11
+  - pyyaml>=6.0
+  - pytorch>=2.0
+  - torchvision>=0.15
+  - pip:
+    - opencv-python-headless>=4.8

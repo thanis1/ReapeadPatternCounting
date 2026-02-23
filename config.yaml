@@ -1,0 +1,51 @@
+# Pattern Detector - Configuration
+
+# ORB displacement voting
+orb:
+  n_features: 3000
+  match_k: 6
+  hamming_threshold: 50
+  min_displacement: 0.05
+  min_votes: 5
+  min_period_px: 10
+
+# Combined filter bank
+filterbank:
+  gabor_scales: [3, 5, 9]
+  gabor_orientations: 8
+  gabor_kernel_size: 21
+  log_sigmas: [2, 5, 10]
+  texture_kernel_sizes: [7, 15]
+  lm_support: 11
+  lm_n_orientations: 6
+  schmid_params:
+    - [2,1]
+    - [4,1]
+    - [4,2]
+    - [6,1]
+    - [6,2]
+    - [6,3]
+    - [8,1]
+    - [8,2]
+    - [8,3]
+    - [10,1]
+    - [10,2]
+    - [10,3]
+    - [10,4]
+  pool_scales: [1, 2, 4]
+  tukey_alpha: 0.1
+  peak_height_ratio: 0.15
+  peak_prominence_ratio: 0.05
+
+# ResNet feature extraction
+resnet:
+  model: resnet18
+  layers: [relu, layer1, layer2]
+  pool_scales: [1, 2, 4]
+
+# Ensemble weights
+ensemble:
+  weights:
+    orb: 0.15
+    filterbank: 0.50
+    resnet: 0.35
