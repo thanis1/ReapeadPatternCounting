@@ -8,8 +8,7 @@ python detect.py testimage.png
 ```
 
 ## Methods
-
-Three methods working in different domains, combined via ensemble voting.
+Three methods working in different domains, combined via ensemble voting. The ensemble combines these three approaches, selected because they operate at three different feature levels and spaces. The first is ORB, which operates in the spatial domain and is fast. The second uses handcrafted filters and FFT autocorrelation. The third uses pretrained CNN features.
 
 ### Method 1: ORB Displacement Voting (orb.py)
 
