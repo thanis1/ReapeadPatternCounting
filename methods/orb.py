@@ -6,8 +6,6 @@ and uses histogram voting to find the tile period.
 import sys, os
 import numpy as np
 import cv2
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import histogram_vote
 
 
