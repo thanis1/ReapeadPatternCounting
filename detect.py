@@ -4,17 +4,17 @@ Main script: loads an image, runs detection methods, prints grid dimensions.
 
 import argparse
 import json
-import os
 import sys
 import time
 from pathlib import Path
 
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cv2
 import yaml
-
 from methods import orb, filterbank, ensemble
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-# Check Resent availability 
+
+# Check ResNet availability
 try:
     from methods import resnet
     _has_resnet = True
@@ -57,7 +57,7 @@ def run_method(name, fn, *args, **kwargs):
         **kwargs: keyword arguments forwarded to fn
 
     Returns
-        tuple on success, whatever fn returns
+        tuple on success (h, v, conf) or (h, v)
         None on failure
     """
     print(f"\n  running {name} ...")
@@ -72,7 +72,12 @@ def run_method(name, fn, *args, **kwargs):
 
     dt = time.perf_counter() - t0
 
-    if len(result) == 3:
+    # Validate that the method returned a usable result
+    if not isinstance(result, (tuple, list)) or len(result) < 2:
+        print(f"  {name} FAILED: unexpected return value  ({dt:.3f}s)")
+        return None
+
+    if len(result) >= 3:
         print(f"  {name} result: {result[0]} x {result[1]}  "
               f"conf={result[2]:.3f}  ({dt:.3f}s)")
     else:
@@ -91,6 +96,10 @@ def main():
     parser.add_argument("-o", "--output", default=None,
                         help="save results to json")
     args = parser.parse_args()
+
+    # Exit early if ResNet explicitly requested but unavailable
+    if args.method == "resnet" and not _has_resnet:
+        sys.exit("ERROR: ResNet requested but torch/torchvision not installed")
 
     # Step 2: load image
     img_bgr = cv2.imread(args.image)
@@ -132,8 +141,17 @@ def main():
         sys.exit("ERROR: all methods failed, no results")
 
     if args.method == "ensemble" and len(results) > 1:
-        weights = cfg.get("ensemble", {}).get("weights", DEFAULT_WEIGHTS)
-        h, v = run_method("Ensemble", ensemble.vote, results, weights)
+        # Only keep weights for methods that produced results, then normalise
+        raw_weights = cfg.get("ensemble", {}).get("weights", DEFAULT_WEIGHTS)
+        weights = {k: raw_weights.get(k, 0.0) for k in results}
+        total = sum(weights.values())
+        if total > 0:
+            weights = {k: v / total for k, v in weights.items()}
+
+        ens = run_method("Ensemble", ensemble.vote, results, weights)
+        if ens is None:
+            sys.exit("ERROR: ensemble voting failed")
+        h, v = ens
     else:
         name = list(results.keys())[0]
         h, v = results[name][0], results[name][1]
