@@ -103,7 +103,7 @@ def detect(gray, cfg, img_bgr=None):
     h_period = find_period_from_profile(ac[0, :], W)
     v_period = find_period_from_profile(ac[:, 0], H)
 
-    # Guard against zero or invalid period
+    # Check zero or invalid period
     if not np.isfinite(h_period) or h_period < 1:
         h_period = float(W)
     if not np.isfinite(v_period) or v_period < 1:
