@@ -2,6 +2,8 @@
 Shared helper functions used by all detection methods.
 """
 
+import warnings
+
 import numpy as np
 import cv2
 from math import gcd
@@ -21,6 +23,9 @@ def high_pass_filter(img_gray):
     Returns
         2D numpy array (H, W)
     """
+    if img_gray.ndim != 2:
+        raise ValueError(f"expected 2D grayscale image, got shape {img_gray.shape}")
+
     H, W = img_gray.shape
 
     # Step 1: pick a blur kernel proportional to image size
@@ -59,7 +64,13 @@ def fft_autocorrelation(feature_maps, tukey_alpha=0.1):
     ac_sum = np.zeros((H, W), dtype=np.float64)
     n_valid = 0
 
-    for fm in feature_maps:
+    for i, fm in enumerate(feature_maps):
+        # Warn and skip maps with wrong shape
+        if fm.shape != (H, W):
+            warnings.warn(f"fft_autocorrelation: skipping map with shape "
+                          f"{fm.shape}, expected ({H}, {W})")
+            continue
+
         # Step 2: mean-subtract and apply window
         fm_win = (fm - fm.mean()) * window
 
@@ -189,9 +200,17 @@ def multiscale_pool(feature_maps, scales=(1, 2, 4)):
     Returns
         list of 2D numpy arrays
     """
+    if not feature_maps:
+        raise ValueError("empty feature map list")
+
     H, W = feature_maps[0].shape
     pooled = []
     for fm in feature_maps:
+        # Warn and skip maps with wrong shape
+        if fm.shape != (H, W):
+            warnings.warn(f"multiscale_pool: skipping map with shape "
+                          f"{fm.shape}, expected ({H}, {W})")
+            continue
         for s in scales:
             if s == 1:
                 # Step 1: scale=1 means keep original
