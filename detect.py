@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Main script: loads an image, runs detection methods, prints grid dimensions.
 """
@@ -58,7 +57,7 @@ def run_method(name, fn, *args, **kwargs):
         **kwargs: keyword arguments forwarded to fn
 
     Returns
-        tuple on success, whatever fn returns (typically (h, v, conf) or (h, v))
+        tuple on success, whatever fn returns
         None on failure
     """
     print(f"\n  running {name} ...")

@@ -16,10 +16,10 @@ def high_pass_filter(img_gray):
     Subtracts a large Gaussian blur from the image: I_hp = I - blur(I) + 128
 
     Params
-        img_gray: 2D numpy array (H, W), uint8 grayscale image
+        img_gray: 2D numpy array (H, W)
 
     Returns
-        2D numpy array (H, W), uint8 high-pass filtered image
+        2D numpy array (H, W)
     """
     H, W = img_gray.shape
 
